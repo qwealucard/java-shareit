@@ -1,5 +1,6 @@
 package ru.practicum.shareit.exceptions;
 
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -30,11 +31,8 @@ public class GlobalExceptionHandler {
     }
 
     @Getter
+    @AllArgsConstructor
     static class ErrorResponse {
         private final String error;
-
-        public ErrorResponse(String error) {
-            this.error = error;
-        }
     }
 }
