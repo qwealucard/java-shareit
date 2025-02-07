@@ -53,7 +53,7 @@ public class ItemServiceImpl implements ItemService {
         try {
             User owner = userService.findUserById(userId);
             Item existingItem = findItemById(itemId);
-            if (existingItem.getOwner().equals(userId)) {
+            if (!existingItem.getOwner().equals(userService.findUserById(userId))) {
                 throw new ForbiddenException("Вы не владелец этой вещи");
             }
             if (updatedItemDto.getName() != null) {
