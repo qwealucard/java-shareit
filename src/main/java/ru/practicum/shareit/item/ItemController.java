@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.*;
 import ru.practicum.shareit.item.dto.ItemDto;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * TODO Sprint add-controllers.
@@ -23,8 +24,8 @@ public class ItemController {
     }
 
     @PostMapping
-    public ItemDto addItem(@Valid @RequestHeader(sharerUserId) Long userId,
-                           @RequestBody ItemDto itemDto) {
+    public Optional<ItemDto> addItem(@Valid @RequestHeader(sharerUserId) Long userId,
+                            @RequestBody ItemDto itemDto) {
         return itemService.addItem(userId, itemDto);
     }
 
