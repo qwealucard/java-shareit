@@ -13,8 +13,12 @@ import java.util.Collection;
 @RequestMapping(path = "/users")
 public class UserController {
 
-    @Autowired
     UserService userService;
+
+    @Autowired
+    public UserController(UserService userService) {
+        this.userService = userService;
+    }
 
     @PostMapping
     public User addUser(@Valid @RequestBody User user) {

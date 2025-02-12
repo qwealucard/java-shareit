@@ -1,9 +1,7 @@
 package ru.practicum.shareit.item;
 
-import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
-import ru.practicum.shareit.exceptions.NotFoundException;
 import ru.practicum.shareit.item.model.Item;
 
 import java.util.*;
@@ -13,14 +11,13 @@ import java.util.stream.Collectors;
 @Repository
 public class ItemStorage {
 
-    @Getter
     private final Map<Long, Item> items = new HashMap<>();
 
 
-    public Item addItem(Item item) {
+    public Optional<Item> addItem(Item item) {
         items.put(item.getId(), item);
         log.info("Добавлена вещь с id: {}", item.getId());
-        return item;
+        return Optional.of(item);
     }
 
     public Item updateItem(Item item) {
@@ -29,13 +26,17 @@ public class ItemStorage {
         return item;
     }
 
-    public Item findItemById(Long id) {
+    public Collection<Item> findAll() {
+        return items.values();
+    }
+
+    public Collection<Long> findAllId() {
+        return items.keySet();
+    }
+
+    public Optional<Item> findItemById(Long id) {
         Item item = items.get(id);
-        if (item == null) {
-            log.warn("Вещь с id {} не найдена", id);
-            throw new NotFoundException("Вещи с id " + id + " не найдено");
-        }
-        return item;
+        return Optional.of(item);
     }
 
     public List<Item> findItemsByUserId(Long userId) {

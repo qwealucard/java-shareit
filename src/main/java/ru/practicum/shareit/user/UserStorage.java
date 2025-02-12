@@ -1,6 +1,5 @@
 package ru.practicum.shareit.user;
 
-import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
 
@@ -10,21 +9,20 @@ import java.util.*;
 @Slf4j
 public class UserStorage {
 
-    @Getter
     private final Map<Long, User> users = new HashMap<>();
 
-    public User addUser(User user) {
+    public Optional<User> addUser(User user) {
         users.put(user.getId(), user);
-        return user;
+        return Optional.of(user);
     }
 
     public Collection<User> findAll() {
         return users.values();
     }
 
-    public User findUserById(Long id) {
+    public Optional<User> findUserById(Long id) {
         log.info("Поиск пользователя с id {} в хранилище", id);
-        return users.get(id);
+        return Optional.ofNullable(users.get(id));
     }
 
     public User updateUser(User user) {

@@ -10,6 +10,7 @@ import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.user.User;
 import ru.practicum.shareit.user.UserService;
+import ru.practicum.shareit.user.UserStorage;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -19,22 +20,22 @@ import java.util.stream.Collectors;
 public class ItemServiceImpl implements ItemService {
     private final ItemStorage itemStorage;
     private final UserService userService;
+    private final UserStorage userStorage;
 
     @Autowired
-    public ItemServiceImpl(ItemStorage itemStorage, UserService userService) {
+    public ItemServiceImpl(ItemStorage itemStorage, UserService userService, UserStorage userStorage) {
         this.itemStorage = itemStorage;
         this.userService = userService;
+        this.userStorage = userStorage;
     }
 
     @Override
-    public Optional<ItemDto> addItem(Long userId, ItemDto itemDto) {
-        User owner;
-        try {
-            owner = userService.findUserById(userId);
-        } catch (NotFoundException e) {
-            log.warn("Владелец с ID {} не найден при добавлении вещи", userId, e);
-            throw new NotFoundException("Владелец не найден");
-        }
+    public ItemDto addItem(Long userId, ItemDto itemDto) {
+        User owner = userStorage.findUserById(userId)
+                                .orElseThrow(() -> {
+                                    log.error("Владелец с ID {} не найден при добавлении вещи", userId);
+                                    return new NotFoundException("Владелец не найден");
+                                });
 
         if (itemDto.getName() == null || itemDto.getName().isBlank()) {
             log.warn("Попытка добавить вещь с пустым названием");
@@ -54,20 +55,22 @@ public class ItemServiceImpl implements ItemService {
         Item item = ItemMapper.toItem(itemDto);
         item.setId(getNextId());
         item.setOwner(owner);
-        Item addedItem = itemStorage.addItem(item);
+        Item addedItem = itemStorage.addItem(item)
+                                    .orElseThrow(() -> {
+                                        log.error("Не удалось добавить вещь в хранилище");
+                                        return new ValidateException("Не удалось добавить вещь");
+                                    });
         log.info("Вещь с ID {} создана", addedItem.getId());
-        return Optional.of(ItemMapper.toItemDto(addedItem));
+        return ItemMapper.toItemDto(addedItem);
     }
 
     @Override
     public ItemDto updateItem(Long userId, ItemDto updatedItemDto) {
-        Item existingItem;
-
-        if (!itemStorage.itemExists(updatedItemDto.getId())) {
-            log.warn("Вещь с ID {} не найдена при обновлении", updatedItemDto.getId());
-            throw new NotFoundException("Вещь не найдена");
-        }
-        existingItem = itemStorage.findItemById(updatedItemDto.getId());
+        Item existingItem = itemStorage.findItemById(updatedItemDto.getId())
+                                       .orElseThrow(() -> {
+                                           log.error("Вещь с ID {} не найдена при обновлении", updatedItemDto.getId());
+                                           return new NotFoundException("Вещь не найдена");
+                                       });
         try {
             User owner = userService.findUserById(userId);
             if (!existingItem.getOwner().getId().equals(userId)) {
@@ -90,16 +93,18 @@ public class ItemServiceImpl implements ItemService {
             log.info("Вещь с ID {} обновлена", updatedItemDto.getId());
             return ItemMapper.toItemDto(updatedItem);
         } catch (NotFoundException e) {
-            log.warn("Владелец с ID {} не найден при обновлении вещи", userId, e);
+            log.error("Владелец с ID {} не найден при обновлении вещи", userId, e);
             throw new NotFoundException("Владелец не найден");
-        } catch (ForbiddenException e) {
-            throw e;
         }
     }
 
     @Override
     public ItemDto findItemDtoById(Long id) {
-        Item item = itemStorage.findItemById(id);
+        Item item = itemStorage.findItemById(id)
+                               .orElseThrow(() -> {
+                                   log.error("Вещь с id {} не найдена", id);
+                                   return new NotFoundException("Вещь с id " + id + " не найдена");
+                               });
         return ItemMapper.toItemDto(item);
     }
 
@@ -115,7 +120,7 @@ public class ItemServiceImpl implements ItemService {
         if (text == null || text.isBlank()) {
             return Collections.emptyList();
         }
-        return itemStorage.getItems().values().stream()
+        return itemStorage.findAll().stream()
                           .filter(item -> (item.getName().toLowerCase().contains(text.toLowerCase()) ||
                                   item.getDescription().toLowerCase().contains(text.toLowerCase())) &&
                                   item.getAvailable())
@@ -130,7 +135,7 @@ public class ItemServiceImpl implements ItemService {
     }
 
     private Long getNextId() {
-        Long currentMaxId = itemStorage.getItems().keySet()
+        Long currentMaxId = itemStorage.findAllId()
                                        .stream()
                                        .mapToLong(id -> id)
                                        .peek(id -> log.trace("id сгенерирован {}", id))

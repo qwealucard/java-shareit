@@ -4,12 +4,11 @@ import org.springframework.stereotype.Service;
 import ru.practicum.shareit.item.dto.ItemDto;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public interface ItemService {
 
-    Optional<ItemDto> addItem(Long userId, ItemDto itemDto);
+    ItemDto addItem(Long userId, ItemDto itemDto);
 
     ItemDto updateItem(Long userId, ItemDto updatedItemDto);
 
