@@ -30,6 +30,18 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(new ErrorResponse(e.getMessage()), HttpStatus.FORBIDDEN);
     }
 
+    @ExceptionHandler(BookingNotAvailableItemsException.class)
+    public ResponseEntity<ErrorResponse> handleBookingNotAvailableItemsException(BookingNotAvailableItemsException e) {
+        log.error("Вещь не доступна для бронирования");
+        return new ResponseEntity<>(new ErrorResponse(e.getMessage()), HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    @ExceptionHandler(CommentNotBookingItemException.class)
+    public ResponseEntity<ErrorResponse> handleCommentNotBookingItemException(CommentNotBookingItemException e) {
+        log.error("Вы не бронировали эту вещь");
+        return new ResponseEntity<>(new ErrorResponse(e.getMessage()), HttpStatus.BAD_REQUEST);
+    }
+
     @Getter
     @AllArgsConstructor
     static class ErrorResponse {

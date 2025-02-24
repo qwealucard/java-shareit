@@ -1,9 +1,13 @@
 package ru.practicum.shareit.item;
 
 import jakarta.validation.Valid;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import ru.practicum.shareit.item.dto.CommentDto;
+import ru.practicum.shareit.item.dto.CommentOutDto;
 import ru.practicum.shareit.item.dto.ItemDto;
+import ru.practicum.shareit.item.dto.ItemWithCommentsDto;
 
 import java.util.List;
 
@@ -12,6 +16,7 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/items")
+@Slf4j
 public class ItemController {
 
     private final ItemService itemService;
@@ -24,7 +29,7 @@ public class ItemController {
 
     @PostMapping
     public ItemDto addItem(@Valid @RequestHeader(sharerUserId) Long userId,
-                            @RequestBody ItemDto itemDto) {
+                           @RequestBody ItemDto itemDto) {
         return itemService.addItem(userId, itemDto);
     }
 
@@ -36,17 +41,24 @@ public class ItemController {
     }
 
     @GetMapping("/{itemId}")
-    public ItemDto findItemDtoById(@PathVariable Long itemId) {
-        return itemService.findItemDtoById(itemId);
+    public ItemWithCommentsDto findItemDtoById(@PathVariable Long itemId) {
+        return itemService.findItemDtoWithCommentsById(itemId);
     }
 
     @GetMapping
-    public List<ItemDto> userItems(@RequestHeader(sharerUserId) Long userId) {
+    public List<ItemWithCommentsDto> userItems(@RequestHeader(sharerUserId) Long userId) {
         return itemService.userItems(userId);
     }
 
     @GetMapping("/search")
     public List<ItemDto> searchItems(@RequestParam String text) {
         return itemService.searchItems(text);
+    }
+
+    @PostMapping("/{itemId}/comment")
+    public CommentOutDto addComment(@PathVariable Long itemId,
+                                    @RequestHeader(sharerUserId) Long userId,
+                                    @RequestBody CommentDto commentDto) {
+        return itemService.addComment(userId, itemId, commentDto);
     }
 }
