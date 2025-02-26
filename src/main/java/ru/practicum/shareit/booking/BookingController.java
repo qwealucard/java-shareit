@@ -1,5 +1,6 @@
 package ru.practicum.shareit.booking;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -14,14 +15,10 @@ import java.util.List;
 @RestController
 @RequestMapping(path = "/bookings")
 @Slf4j
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
 public class BookingController {
-    BookingService bookingService;
+    private final BookingService bookingService;
     private final String header = "X-Sharer-User-Id";
-
-    @Autowired
-    public BookingController(BookingService bookingService) {
-        this.bookingService = bookingService;
-    }
 
     @PostMapping
     public BookingDtoOut addBooking(@RequestHeader(header) Long userId,
@@ -31,26 +28,26 @@ public class BookingController {
 
     @PatchMapping("/{bookingId}")
     public BookingDtoOut approvedBooking(@RequestHeader(header) Long userId,
-                                             @PathVariable Long bookingId,
-                                             @RequestParam Boolean approved) {
+                                         @PathVariable Long bookingId,
+                                         @RequestParam Boolean approved) {
         return bookingService.approveBooking(bookingId, userId, approved);
     }
 
     @GetMapping("/{bookingId}")
     public BookingDtoOut getBookingById(@RequestHeader(header) Long userId,
-                                     @PathVariable Long bookingId) {
+                                        @PathVariable Long bookingId) {
         return bookingService.getBookingById(bookingId, userId);
     }
 
     @GetMapping
     public List<BookingDtoOut> getBookings(@RequestHeader(header) Long userId,
-                                        @RequestParam(defaultValue = "ALL") String status) {
+                                           @RequestParam(defaultValue = "ALL") String status) {
         return bookingService.getBookings(userId, status);
     }
 
     @GetMapping("/owner")
     public List<BookingDtoOut> getOwnerBookings(@RequestHeader(header) Long userId,
-                                             @RequestParam(defaultValue = "ALL") String status) {
+                                                @RequestParam(defaultValue = "ALL") String status) {
         return bookingService.getOwnerBookings(userId, status);
     }
 }

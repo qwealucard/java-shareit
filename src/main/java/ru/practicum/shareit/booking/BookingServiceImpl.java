@@ -6,10 +6,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.shareit.booking.dto.BookingDto;
 import ru.practicum.shareit.booking.dto.BookingDtoOut;
-import ru.practicum.shareit.exceptions.BookingNotAvailableItemsException;
-import ru.practicum.shareit.exceptions.ForbiddenException;
-import ru.practicum.shareit.exceptions.NotFoundException;
-import ru.practicum.shareit.exceptions.ValidateException;
+import ru.practicum.shareit.exceptions.*;
 import ru.practicum.shareit.item.ItemRepository;
 import ru.practicum.shareit.item.ItemService;
 import ru.practicum.shareit.item.dto.ItemDto;
@@ -20,21 +17,22 @@ import ru.practicum.shareit.user.UserService;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Slf4j
 @Component
-public class BookingSeriviceImpl implements BookingService {
+public class BookingServiceImpl implements BookingService {
 
-    BookingRepository bookingRepository;
-    ItemService itemService;
-    UserService userService;
-    UserRepository userRepository;
-    ItemRepository itemRepository;
+    private final BookingRepository bookingRepository;
+    private final ItemService itemService;
+    private final UserService userService;
+    private final UserRepository userRepository;
+    private final ItemRepository itemRepository;
 
     @Autowired
-    BookingSeriviceImpl(BookingRepository bookingRepository, ItemService itemService, UserService userService,
-                        UserRepository userRepository, ItemRepository itemRepository) {
+    BookingServiceImpl(BookingRepository bookingRepository, ItemService itemService, UserService userService,
+                       UserRepository userRepository, ItemRepository itemRepository) {
         this.bookingRepository = bookingRepository;
         this.itemService = itemService;
         this.userService = userService;
@@ -52,6 +50,7 @@ public class BookingSeriviceImpl implements BookingService {
         });
 
         if (!item.isAvailable()) {
+            log.error("Вещь с ID {} недоступна для бронирования", item.getId());
             throw new BookingNotAvailableItemsException("Вещь недоступна для бронирования.");
         }
         if (bookingDto.getStart().isBefore(LocalDateTime.now()) || bookingDto.getEnd().isBefore(LocalDateTime.now()) || !bookingDto.getEnd().isAfter(bookingDto.getStart())) {
@@ -62,10 +61,6 @@ public class BookingSeriviceImpl implements BookingService {
                                         log.error("Пользователь с ID {} не найден", userId);
                                         return new NotFoundException("Пользователь не найден");
                                     });
-        if (booker == null) {
-            throw new NotFoundException("Пользователь не найден.");
-        }
-
         Booking booking = BookingMapper.toBooking(bookingDto, item, booker);
         Booking savedBooking = bookingRepository.save(booking);
         return BookingMapper.toBookingForOut(savedBooking);
@@ -94,11 +89,13 @@ public class BookingSeriviceImpl implements BookingService {
     @Override
     public BookingDtoOut getBookingById(Long bookingId, Long userId) {
         log.info("Получаем бронь по id");
-        Booking booking = bookingRepository.findByIdAndBookerId(bookingId, userId)
-                                           .orElseGet(() -> bookingRepository.findByIdAndItemOwnerId(bookingId, userId)
-                                                                             .orElseThrow(() -> new NotFoundException("Бронирование не найдено.")));
 
-        return BookingMapper.toBookingForOut(booking);
+        Optional<Booking> bookingByBooker = bookingRepository.findByIdAndBookerId(bookingId, userId);
+        Optional<Booking> bookingByOwner = bookingRepository.findByIdAndItemOwnerId(bookingId, userId);
+
+        return bookingByBooker.or(() -> bookingByOwner)
+                              .map(BookingMapper::toBookingForOut)
+                              .orElseThrow(() -> new NotFoundException("Бронирование не найдено."));
     }
 
     @Override
@@ -114,7 +111,8 @@ public class BookingSeriviceImpl implements BookingService {
             try {
                 Status status = Status.valueOf(state.toUpperCase());
                 bookings = bookingRepository.findByBookerIdAndStatusOrderByStartDesc(userId, status);
-            } catch (IllegalArgumentException e) {
+            } catch (IllegalStatusException e) {
+                log.error("Статус {} неизвестен ", state);
                 throw new ValidateException("Неизвестный статус: " + state);
             }
         }

@@ -28,8 +28,8 @@ public class ItemController {
     }
 
     @PostMapping
-    public ItemDto addItem(@Valid @RequestHeader(sharerUserId) Long userId,
-                           @RequestBody ItemDto itemDto) {
+    public ItemDto addItem(@RequestHeader(sharerUserId) Long userId,
+                           @Valid @RequestBody ItemDto itemDto) {
         return itemService.addItem(userId, itemDto);
     }
 
