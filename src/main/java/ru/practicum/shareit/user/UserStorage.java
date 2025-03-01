@@ -35,5 +35,4 @@ public class UserStorage {
         users.remove(id);
         log.info("Удален пользователь с id: {}", id);
     }
-
 }

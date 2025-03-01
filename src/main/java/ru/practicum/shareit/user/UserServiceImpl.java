@@ -13,19 +13,17 @@ import java.util.Optional;
 @Component
 @Slf4j
 public class UserServiceImpl implements UserService {
-
-    UserStorage userStorage;
+    UserRepository userRepository;
 
     @Autowired
-    public UserServiceImpl(UserStorage userStorage) {
-        this.userStorage = userStorage;
+    public UserServiceImpl(UserRepository userRepository) {
+        this.userRepository = userRepository;
     }
 
     @Override
     public User addUser(User user) {
         validateEmailUniqueness(user.getEmail());
-        user.setId(getNextId());
-        Optional<User> addedUser = userStorage.addUser(user);
+        Optional<User> addedUser = Optional.of(userRepository.save(user));
         return addedUser.orElseThrow(() -> {
             log.error("Не удалось добавить пользователя с id: {}", user.getId());
             return new ValidateException("Не удалось добавить пользователя");
@@ -35,17 +33,17 @@ public class UserServiceImpl implements UserService {
     @Override
     public Collection<User> findAll() {
         log.info("Получение всех пользователей");
-        return userStorage.findAll();
+        return userRepository.findAll();
     }
 
     @Override
     public User findUserById(Long id) {
         log.info("Поиск пользователя с id: {}", id);
-        return userStorage.findUserById(id)
-                          .orElseThrow(() -> {
-                              log.error("Пользователь с id {} не найден", id);
-                              return new NotFoundException("Пользователь с id " + id + " не найден");
-                          });
+        return userRepository.findById(id)
+                             .orElseThrow(() -> {
+                                 log.error("Пользователь с id {} не найден", id);
+                                 return new NotFoundException("Пользователь с id " + id + " не найден");
+                             });
     }
 
     @Override
@@ -63,33 +61,25 @@ public class UserServiceImpl implements UserService {
             log.info("Email пользователя с ID {} обновлен на {}", userId, updatedUser.getEmail());
         }
 
-        User updated = userStorage.updateUser(existingUser);
+        User updated = userRepository.save(existingUser);
         log.info("Пользователь с ID {} успешно обновлен", userId);
         return updated;
     }
 
     @Override
     public void deleteUserById(Long id) {
-        findUserById(id);
-        userStorage.deleteUserById(id);
+        User user = findUserById(id);
+        userRepository.delete(user);
         log.info("Удален пользователь с id: {}", id);
     }
 
-    private Long getNextId() {
-        Long currentMaxId = userStorage.findAll().stream()
-                                       .mapToLong(User::getId)
-                                       .max()
-                                       .orElse(0L);
-        log.trace("Сгенерирован id: {}", currentMaxId + 1);
-        return currentMaxId + 1;
-    }
 
     private void validateEmailUniqueness(String email) {
         validateEmailUniqueness(email, null);
     }
 
     private void validateEmailUniqueness(String email, Long excludedId) {
-        Collection<User> users = userStorage.findAll();
+        Collection<User> users = userRepository.findAll();
         for (User user : users) {
             if (!Objects.equals(user.getId(), excludedId) && Objects.equals(user.getEmail(), email)) {
                 log.error("Попытка добавить/обновить пользователя с существующим email: {}", email);
