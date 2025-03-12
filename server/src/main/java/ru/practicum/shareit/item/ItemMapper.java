@@ -3,13 +3,9 @@ package ru.practicum.shareit.item;
 import lombok.experimental.UtilityClass;
 import ru.practicum.shareit.item.dto.CommentOutDto;
 import ru.practicum.shareit.item.dto.ItemDto;
-import ru.practicum.shareit.item.dto.ItemDtoForResponse;
 import ru.practicum.shareit.item.dto.ItemWithCommentsDto;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.request.ItemRequest;
-import ru.practicum.shareit.request.ItemRequestMapper;
-import ru.practicum.shareit.request.dto.ItemRequestDto;
-import ru.practicum.shareit.user.UserMapper;
 
 import java.util.List;
 
@@ -44,6 +40,20 @@ public class ItemMapper {
         );
     }
 
+    public static ItemWithCommentsDto itemWithCommentsDto(ItemDto itemDto) {
+        return new ItemWithCommentsDto(
+                itemDto.getId(),
+                itemDto.getName(),
+                itemDto.getDescription(),
+                itemDto.getAvailable(),
+                itemDto.getOwner(),
+                itemDto.getRequestId(),
+                itemDto.getLastBooking(),
+                itemDto.getNextBooking(),
+                null
+        );
+    }
+
     public static ItemWithCommentsDto toItemWithCommentsDto(ItemDto itemDto, List<CommentOutDto> comments) {
         return new ItemWithCommentsDto(
                 itemDto.getId(),
@@ -55,15 +65,6 @@ public class ItemMapper {
                 itemDto.getLastBooking(),
                 itemDto.getNextBooking(),
                 comments
-        );
-    }
-
-    public static ItemDtoForResponse toItemDtoForResponse(Item item) {
-        return new ItemDtoForResponse(
-                item.getId(),
-                item.getName(),
-                item.getDescription(),
-                UserMapper.toUserDto(item.getOwner())
         );
     }
 }

@@ -17,6 +17,7 @@ import java.util.List;
 @Slf4j
 @RequiredArgsConstructor(onConstructor_ = @Autowired)
 public class BookingController {
+
     private final BookingService bookingService;
     private final String header = "X-Sharer-User-Id";
 

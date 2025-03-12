@@ -1,6 +1,5 @@
 package ru.practicum.shareit.item;
 
-import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -41,8 +40,8 @@ public class ItemController {
     }
 
     @GetMapping("/{itemId}")
-    public ItemWithCommentsDto findItemDtoById(@PathVariable Long itemId) {
-        return itemService.findItemDtoWithCommentsById(itemId);
+    public ItemWithCommentsDto findItemDtoById(@PathVariable Long itemId, @RequestHeader(sharerUserId) Long userId) {
+        return itemService.findItemDtoWithCommentsById(itemId, userId);
     }
 
     @GetMapping

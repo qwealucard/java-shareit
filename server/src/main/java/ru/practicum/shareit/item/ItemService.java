@@ -15,7 +15,7 @@ public interface ItemService {
 
     ItemDto updateItem(Long userId, ItemDto updatedItemDto);
 
-    ItemDto findItemDtoById(Long id);
+    ItemWithCommentsDto findItemDtoById(Long id);
 
     List<ItemWithCommentsDto> userItems(Long id);
 
@@ -23,5 +23,5 @@ public interface ItemService {
 
     CommentOutDto addComment(Long userId, Long itemId, CommentDto commentDto);
 
-    ItemWithCommentsDto findItemDtoWithCommentsById(Long id);
+    ItemWithCommentsDto findItemDtoWithCommentsById(Long id, Long userId);
 }

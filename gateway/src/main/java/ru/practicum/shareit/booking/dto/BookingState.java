@@ -13,6 +13,8 @@ public enum BookingState {
     PAST,
     // Отклоненные
     REJECTED,
+
+    APPROVED,
     // Ожидающие подтверждения
     WAITING;
 

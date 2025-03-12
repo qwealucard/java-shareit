@@ -29,7 +29,7 @@ public class BookingController {
     public ResponseEntity<Object> approveBooking(@RequestHeader(USER_ID_HEADER) Long userId,
                                                  @PathVariable Long bookingId,
                                                  @RequestParam Boolean approved) {
-        return bookingClient.approveBooking(userId, bookingId, approved);
+        return bookingClient.approveBooking(bookingId, userId, approved);
     }
 
     @GetMapping("/{bookingId}")
@@ -40,7 +40,7 @@ public class BookingController {
 
     @GetMapping
     public ResponseEntity<Object> getBookings(@RequestHeader(USER_ID_HEADER) Long userId,
-                                              @RequestParam(defaultValue = "ALL", required = false) String state ) {
+                                              @RequestParam(defaultValue = "ALL", required = false) String state) {
         return bookingClient.getBookings(userId, state);
     }
 

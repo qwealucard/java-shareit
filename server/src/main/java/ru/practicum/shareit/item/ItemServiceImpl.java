@@ -14,10 +14,9 @@ import ru.practicum.shareit.item.dto.ItemWithCommentsDto;
 import ru.practicum.shareit.item.model.Comment;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.request.ItemRequest;
-import ru.practicum.shareit.request.ItemRequestMapper;
 import ru.practicum.shareit.request.ItemRequestRepository;
-import ru.practicum.shareit.request.dto.ItemRequestDtoOut;
 import ru.practicum.shareit.user.*;
+import ru.practicum.shareit.user.dto.UserDto;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -77,7 +76,8 @@ public class ItemServiceImpl implements ItemService {
                                               return new NotFoundException("Вещь не найдена");
                                           });
         try {
-            User owner = userService.findUserById(userId);
+            UserDto ownerDto = userService.findUserById(userId);
+            User owner = UserMapper.toUser(ownerDto);
             if (!existingItem.getOwner().getId().equals(userId)) {
                 log.warn("Пользователь с ID {} пытается обновить чужую вещь с ID {}", userId, updatedItemDto.getId());
                 throw new ForbiddenException("Вы не владелец этой вещи");
@@ -104,7 +104,7 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
-    public ItemDto findItemDtoById(Long itemId) {
+    public ItemWithCommentsDto findItemDtoById(Long itemId) {
         Item item = itemRepository.findById(itemId)
                                   .orElseThrow(() -> new NotFoundException("Вещь не найдена"));
 
@@ -143,11 +143,12 @@ public class ItemServiceImpl implements ItemService {
         ItemDto itemDto = ItemMapper.toItemDto(item);
         itemDto.setLastBooking(lastBooking);
         itemDto.setNextBooking(nextBooking);
-        return itemDto;
+
+        return ItemMapper.itemWithCommentsDto(itemDto);
     }
 
     @Override
-    public ItemWithCommentsDto findItemDtoWithCommentsById(Long id) {
+    public ItemWithCommentsDto findItemDtoWithCommentsById(Long id, Long userId) {
 
         Item item = itemRepository.findById(id)
                                   .orElseThrow(() -> new NotFoundException("Вещь не найдена"));
@@ -205,7 +206,7 @@ public class ItemServiceImpl implements ItemService {
                     .toList();
     }
 
-    private List<Item> searchAvailableItems(String text) {
+        private List<Item> searchAvailableItems(String text) {
         if (text == null || text.isBlank()) {
             return Collections.emptyList();
         }
@@ -238,21 +239,14 @@ public class ItemServiceImpl implements ItemService {
                                       log.error("Вещь с ID {} не найдена", itemId);
                                       return new NotFoundException("Вещь не найдена");
                                   });
-        if (!item.isAvailable()) {
-            log.error("Вы не арендовали эту вещь с ID{}", itemId);
-            throw new BookingNotAvailableItemsException("Вы не бронировали эту вещь");
-        }
-        List<Booking> bookings = bookingRepository.findByItemIdAndBookerIdAndStatusAndEndBefore(
-                itemId, userId, Status.APPROVED, LocalDateTime.now());
-
+        List<Booking> bookings = bookingRepository.findByBookerIdAndItemIdAndEndBefore(userId, itemId, LocalDateTime.now());
         if (bookings.isEmpty()) {
             log.error("Пользователь с ID {} не имеет завершенных бронирований для вещи с ID {} или бронирования не подтверждены", userId, itemId);
             throw new CommentNotBookingItemException("Вы не можете оставить комментарий, так как у вас нет завершенных и одобренных бронирований для этой вещи.");
         }
-
         Comment comment = CommentMapper.toComment(commentDto, item, user);
         comment.setCreated(LocalDateTime.now());
-        Comment savedComment = commentRepository.save(comment);
-        return CommentMapper.commentOutDto(savedComment);
+        commentRepository.save(comment);
+        return CommentMapper.commentOutDto(comment);
     }
 }

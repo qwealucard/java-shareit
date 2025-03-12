@@ -7,8 +7,6 @@ import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import ru.practicum.shareit.booking.dto.BookingForItemDto;
 
-import javax.annotation.Nullable;
-
 @Data
 @AllArgsConstructor
 @NoArgsConstructor

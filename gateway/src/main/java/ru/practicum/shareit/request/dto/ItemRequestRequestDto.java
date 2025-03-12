@@ -1,12 +1,11 @@
 package ru.practicum.shareit.request.dto;
 
 import jakarta.validation.constraints.NotNull;
-import lombok.AllArgsConstructor;
 import lombok.Data;
 
 @Data
-@AllArgsConstructor
 public class ItemRequestRequestDto {
+    private Long id;
 
     @NotNull
     private String description;

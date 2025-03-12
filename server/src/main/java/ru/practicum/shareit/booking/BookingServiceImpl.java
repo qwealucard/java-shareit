@@ -2,26 +2,25 @@ package ru.practicum.shareit.booking;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.shareit.booking.dto.BookingDto;
 import ru.practicum.shareit.booking.dto.BookingDtoOut;
 import ru.practicum.shareit.exceptions.*;
 import ru.practicum.shareit.item.ItemRepository;
 import ru.practicum.shareit.item.ItemService;
-import ru.practicum.shareit.item.dto.ItemDto;
+import ru.practicum.shareit.item.dto.ItemWithCommentsDto;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.user.User;
 import ru.practicum.shareit.user.UserRepository;
 import ru.practicum.shareit.user.UserService;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Slf4j
-@Component
+@Service
 public class BookingServiceImpl implements BookingService {
 
     private final BookingRepository bookingRepository;
@@ -53,7 +52,7 @@ public class BookingServiceImpl implements BookingService {
             log.error("Вещь с ID {} недоступна для бронирования", item.getId());
             throw new BookingNotAvailableItemsException("Вещь недоступна для бронирования.");
         }
-        if (bookingDto.getStart().isBefore(LocalDateTime.now()) || bookingDto.getEnd().isBefore(LocalDateTime.now()) || !bookingDto.getEnd().isAfter(bookingDto.getStart())) {
+        if (bookingDto.getStart().isAfter(bookingDto.getEnd()) || bookingDto.getStart().isEqual(bookingDto.getEnd())) {
             throw new ValidateException("Некорректные даты бронирования.");
         }
         User booker = userRepository.findById(userId)
@@ -63,6 +62,7 @@ public class BookingServiceImpl implements BookingService {
                                     });
         Booking booking = BookingMapper.toBooking(bookingDto, item, booker);
         Booking savedBooking = bookingRepository.save(booking);
+      List<Booking> bookings = bookingRepository.findAll();
         return BookingMapper.toBookingForOut(savedBooking);
     }
 
@@ -73,7 +73,7 @@ public class BookingServiceImpl implements BookingService {
         Booking booking = bookingRepository.findById(bookingId)
                                            .orElseThrow(() -> new NotFoundException("Бронирование не найдено."));
 
-        ItemDto itemDto = itemService.findItemDtoById(booking.getItem().getId());
+        ItemWithCommentsDto itemDto = itemService.findItemDtoById(booking.getItem().getId());
 
         if (!itemDto.getOwner().equals(userId)) {
             throw new ForbiddenException("Только владелец вещи может подтвердить/отклонить бронирование.");

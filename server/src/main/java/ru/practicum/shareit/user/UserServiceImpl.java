@@ -5,10 +5,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import ru.practicum.shareit.exceptions.NotFoundException;
 import ru.practicum.shareit.exceptions.ValidateException;
+import ru.practicum.shareit.user.dto.UserDto;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 
 @Component
 @Slf4j
@@ -21,36 +22,37 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public User addUser(User user) {
-        validateEmailUniqueness(user.getEmail());
-        Optional<User> addedUser = Optional.of(userRepository.save(user));
-        return addedUser.orElseThrow(() -> {
-            log.error("Не удалось добавить пользователя с id: {}", user.getId());
-            return new ValidateException("Не удалось добавить пользователя");
-        });
+    public UserDto addUser(UserDto userDto) {
+        validateEmailUniqueness(userDto.getEmail());
+        User user = UserMapper.toUser(userDto);
+        return UserMapper.toUserDto(userRepository.save(user));
     }
 
     @Override
-    public Collection<User> findAll() {
+    public Collection<UserDto> findAll() {
+        List<User> users = userRepository.findAll();
+        List<UserDto> userDtos = users.stream()
+                                      .map(UserMapper::toUserDto)
+                                      .toList();
         log.info("Получение всех пользователей");
-        return userRepository.findAll();
+        return userDtos;
     }
 
     @Override
-    public User findUserById(Long id) {
+    public UserDto findUserById(Long id) {
         log.info("Поиск пользователя с id: {}", id);
-        return userRepository.findById(id)
-                             .orElseThrow(() -> {
-                                 log.error("Пользователь с id {} не найден", id);
-                                 return new NotFoundException("Пользователь с id " + id + " не найден");
-                             });
+        return UserMapper.toUserDto(userRepository.findById(id)
+                                                  .orElseThrow(() -> {
+                                                      log.error("Пользователь с id {} не найден", id);
+                                                      return new NotFoundException("Пользователь с id " + id + " не найден");
+                                                  }));
     }
 
     @Override
-    public User updateUser(User updatedUser) {
+    public UserDto updateUser(UserDto updatedUser) {
         Long userId = updatedUser.getId();
-
-        User existingUser = findUserById(userId);
+        UserDto existingUserDto = findUserById(userId);
+        User existingUser = UserMapper.toUser(existingUserDto);
         if (updatedUser.getName() != null) {
             existingUser.setName(updatedUser.getName());
             log.info("Имя пользователя с ID {} обновлено на {}", userId, updatedUser.getName());
@@ -60,15 +62,15 @@ public class UserServiceImpl implements UserService {
             existingUser.setEmail(updatedUser.getEmail());
             log.info("Email пользователя с ID {} обновлен на {}", userId, updatedUser.getEmail());
         }
-
         User updated = userRepository.save(existingUser);
         log.info("Пользователь с ID {} успешно обновлен", userId);
-        return updated;
+        return UserMapper.toUserDto(updated);
     }
 
     @Override
     public void deleteUserById(Long id) {
-        User user = findUserById(id);
+        UserDto userDto = findUserById(id);
+        User user = UserMapper.toUser(userDto);
         userRepository.delete(user);
         log.info("Удален пользователь с id: {}", id);
     }

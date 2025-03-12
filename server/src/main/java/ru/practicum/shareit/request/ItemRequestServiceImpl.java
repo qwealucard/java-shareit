@@ -47,13 +47,13 @@ public class ItemRequestServiceImpl implements ItemRequestService {
 
     @Override
     public List<ItemRequestDtoOut> getRequests(Long userId) {
-        User user = userRepository.findById(userId).orElseThrow(()->{
+        User user = userRepository.findById(userId).orElseThrow(() -> {
             log.error("Пользователь с Id {} не найден", userId);
             return new NotFoundException("Пользователь не найден");
         });
         List<ItemRequest> itemRequests = itemRequestRepository.findByRequesterOrderByCreatedDesc(user);
         List<ItemRequestDtoOut> itemRequestDtoOuts = new ArrayList<>();
-        for(ItemRequest item : itemRequests) {
+        for (ItemRequest item : itemRequests) {
             itemRequestDtoOuts.add(ItemRequestMapper.itemRequestDtoOut(item, null));
         }
         return itemRequestDtoOuts;
@@ -61,32 +61,28 @@ public class ItemRequestServiceImpl implements ItemRequestService {
 
     @Override
     public List<ItemRequestDtoOut> findAllRequests(Long userId) {
-        User user = userRepository.findById(userId).orElseThrow(() ->{
+        User user = userRepository.findById(userId).orElseThrow(() -> {
             log.error("Пользователь с Id{} не найден", userId);
             return new NotFoundException("Пользователь не найден");
         });
         List<ItemRequestDtoOut> anotherItems = new ArrayList<>();
         List<ItemRequest> allItems = itemRequestRepository.findAll();
-        for(ItemRequest item : allItems) {
-            if(item.getRequester() != user) {
+        for (ItemRequest item : allItems) {
                 anotherItems.add(ItemRequestMapper.itemRequestDtoOut(item, null));
-            }
         }
         return anotherItems;
     }
 
     @Override
     public ItemRequestDtoOut findRequestById(Long id) {
-      ItemRequest itemRequest =  itemRequestRepository.findById(id).orElseThrow(() -> {
-           log.error("Запроса с Id {} не существует", id);
-          return new NotFoundException("Запрос не найден");
-       });
+        ItemRequest itemRequest = itemRequestRepository.findById(id).orElseThrow(() -> {
+            log.error("Запроса с Id {} не существует", id);
+            return new NotFoundException("Запрос не найден");
+        });
         List<Item> items = itemRepository.findItemsByRequestId(id);
         List<ItemDto> itemRequestsDtoOut = items.stream()
                                                 .map(ItemMapper::toItemDto)
                                                 .toList();
         return ItemRequestMapper.itemRequestDtoOut(itemRequest, itemRequestsDtoOut);
     }
-
-
 }
