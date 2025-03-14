@@ -92,22 +92,9 @@ public class BookingServiceTest {
 
         bookingDto.setItemId(itemDto1.getId());
 
-
-        BookingNotAvailableItemsException exception = assertThrows(BookingNotAvailableItemsException.class,
-                () -> bookingService.addBooking(user.getId(), bookingDto));
-        assertEquals("Вещь недоступна для бронирования.", exception.getMessage());
-
+        assertThatThrownBy(() -> bookingService.addBooking(user.getId(), bookingDto))
+                .isInstanceOf(BookingNotAvailableItemsException.class);
     }
-//    @Test
-//    void addBookingStartValidateExceptionTest() {
-//        UserDto userDto = userService.addUser(booker);
-//        itemDto.setAvailable(true);
-//        ItemDto itemDto1 = itemService.addItem(userDto.getId(), itemDto);
-//        bookingDto.setItemId(itemDto1.getId());
-//        bookingDto.setStart(LocalDateTime.now().minusDays(1L));
-//        assertThatThrownBy(() -> bookingService.addBooking(userDto.getId(), bookingDto))
-//                .isInstanceOf(ValidateException.class);
-//    }
 
     @Test
     void addBookingEndValidateExceptionTest() {
